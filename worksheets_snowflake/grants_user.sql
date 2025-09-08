@@ -48,4 +48,5 @@ SHOW GRANTS TO ROLE analyst_role;
 
 GRANT ROLE ingest_role TO user hampus;
 GRANT ROLE transform_role TO user hampus;
+GRANT ROLE transform_role TO user efrem;
 GRANT ROLE analyst_role TO user hampus;
