@@ -47,7 +47,7 @@ def jobsearch_resource(params):
 
 def run_pipeline(query, table_name, occupation_fields):
     pipeline = dlt.pipeline(
-        pipeline_name="jobads_demo",
+        pipeline_name="jobads_pipeline",
         destination="snowflake",
         dataset_name="staging",
     )
