@@ -5,11 +5,11 @@ GRANT ROLE ACCOUNTADMIN TO USER said;
 
 -- Ingest role
 GRANT USAGE ON DATABASE hr_project_db TO ROLE ingest_role;
+GRANT CREATE SCHEMA ON DATABASE HR_PROJECT_DB TO ROLE INGEST_ROLE;
 GRANT USAGE ON SCHEMA hr_project_db.staging TO ROLE ingest_role;
 GRANT CREATE TABLE ON SCHEMA hr_project_db.staging TO ROLE ingest_role;
 GRANT INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA hr_project_db.staging TO ROLE ingest_role;
 GRANT INSERT, UPDATE, DELETE ON FUTURE TABLES IN SCHEMA hr_project_db.staging TO ROLE ingest_role;
-
 
 -- Transform role
 GRANT USAGE ON DATABASE hr_project_db TO ROLE transform_role;
