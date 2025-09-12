@@ -1,13 +1,15 @@
 with src_job_details as (select * from {{ ref('src_job_details') }})
 
 select
-    {{ dbt_utils.generate_surrogate_key(['HEADLINE']) }} AS job_details_id,
-    HEADLINE,
-    DESCRIPTION, 
-    DESCRIPTION__TEXT_FORMATTED,
-    EMPLOYMENT_TYPE,
-    DURATION,
-    SALARY_TYPE,
-    SCOPE_OF_WORK__MIN,
-    SCOPE_OF_WORK__MAX
+    {{ dbt_utils.generate_surrogate_key(['ID']) }} AS job_details_id,
+    ID,
+    MAX(HEADLINE),
+    MAX(DESCRIPTION), 
+    MAX(DESCRIPTION__TEXT_FORMATTED),
+    MAX(EMPLOYMENT_TYPE),
+    MAX(DURATION),
+    MAX(SALARY_TYPE),
+    MAX(SCOPE_OF_WORK__MIN),
+    MAX(SCOPE_OF_WORK__MAX)
 from src_job_details
+group by ID

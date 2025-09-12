@@ -2,6 +2,7 @@ with stg_job_ads as (select * from {{ source('hr_project_db', 'stg_ads') }})
 
 
 select
+    ID,
     HEADLINE,
     DESCRIPTION__TEXT AS DESCRIPTION,
     DESCRIPTION__TEXT_FORMATTED,

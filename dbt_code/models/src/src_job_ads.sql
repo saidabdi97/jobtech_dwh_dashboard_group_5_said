@@ -5,10 +5,8 @@ select
     number_of_vacancies as vacancies,
     relevance,
     application_deadline,
-    experience_required,
-    access_to_own_car,
-    driving_license_required,
-    HEADLINE,
-    WORKPLACE_ADDRESS__REGION_CONCEPT_ID,
+    id,
+    employer__workplace,
+    workplace_address__municipality,
 from stg_job_ads
 order by application_deadline
