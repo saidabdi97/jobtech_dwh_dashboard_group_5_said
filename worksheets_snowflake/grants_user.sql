@@ -29,6 +29,10 @@ GRANT INSERT, UPDATE, DELETE ON FUTURE TABLES IN SCHEMA hr_project_db.warehouse 
 
 GRANT USAGE ON SCHEMA hr_project_db.marts TO ROLE transform_role;
 GRANT CREATE VIEW ON SCHEMA hr_project_db.marts TO ROLE transform_role;
+GRANT USAGE ON SCHEMA hr_project_db.marts TO ROLE transform_role;
+GRANT CREATE TABLE, CREATE VIEW ON SCHEMA hr_project_db.marts TO ROLE transform_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA hr_project_db.marts TO ROLE transform_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON FUTURE TABLES IN SCHEMA hr_project_db.marts TO ROLE transform_role;
 
 -- Analyst role
 GRANT USAGE ON DATABASE hr_project_db TO ROLE analyst_role;
