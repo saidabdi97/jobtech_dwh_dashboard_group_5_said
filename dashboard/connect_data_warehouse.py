@@ -4,7 +4,7 @@ import snowflake.connector
 import pandas as pd 
 
  
-def query_job_listings(tabel_name = ''):
+def query_job_listings(tabel_name = 'marts.mart_social_job'):
 
     load_dotenv()
     query= f'SELECT * FROM {tabel_name}'
