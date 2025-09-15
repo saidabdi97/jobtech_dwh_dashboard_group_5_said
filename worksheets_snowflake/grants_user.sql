@@ -38,7 +38,9 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON FUTURE TABLES IN SCHEMA hr_project_db.ma
 GRANT USAGE ON DATABASE hr_project_db TO ROLE analyst_role;
 GRANT USAGE ON WAREHOUSE hr_project_wh TO ROLE analyst_role;
 GRANT USAGE ON SCHEMA hr_project_db.marts TO ROLE analyst_role;
+GRANT SELECT ON ALL TABLES IN SCHEMA hr_project_db.marts TO ROLE analyst_role;
 GRANT SELECT ON ALL VIEWS IN SCHEMA hr_project_db.marts TO ROLE analyst_role;
+GRANT SELECT ON FUTURE TABLES IN SCHEMA hr_project_db.marts TO ROLE analyst_role;
 GRANT SELECT ON FUTURE VIEWS IN SCHEMA hr_project_db.marts TO ROLE analyst_role;
 
 GRANT ROLE ingest_role TO ROLE SYSADMIN;
@@ -61,3 +63,15 @@ GRANT ROLE ingest_role TO user hampus;
 GRANT ROLE transform_role TO user hampus;
 GRANT ROLE transform_role TO user efrem;
 GRANT ROLE analyst_role TO user hampus;
+
+USE ROLE analyst_role;
+
+SHOW GRANTS TO ROLE analyst_role;
+
+-- test querying a mart
+USE WAREHOUSE hr_project_wh;
+SELECT * FROM hr_project_db.marts.mart_technical_jobs;
+
+USE DATABASE hr_project_db;
+USE SCHEMA marts;
+SHOW TABLES;
