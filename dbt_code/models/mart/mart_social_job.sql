@@ -12,10 +12,10 @@ select
     o.occupation_group,
     o.occupation_field,
     j.description,
-    e.workplace_region,
+    e.workplace_address__municipality,
     f.application_deadline
 from fct_job_ads f
 left join dim_occupation o on f.occupation_id = o.occupation_id
 left join dim_job_details j on f.job_details_id = j.job_details_id 
 left join dim_employer e on f.employer_id = e.employer_id 
-where o.occupation_field = 'Yrken med social inriktning';
+where o.occupation_field = 'Yrken med social inriktning'
