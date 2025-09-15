@@ -14,3 +14,4 @@ select
     MAX(WORKPLACE_COUNTRY) AS WORKPLACE_COUNTRY
 from src_employer
 group by employer__workplace, workplace_address__municipality
+

@@ -13,7 +13,7 @@ select
     o.occupation_field,
     j.HEADLINE,
     j.DURATION,
-    e.WORKPLACE_REGION,
+    e.workplace_address__municipality,
     a.DRIVING_LICENSE_REQUIRED,
     f.application_deadline,
 from fct_job_ads f
