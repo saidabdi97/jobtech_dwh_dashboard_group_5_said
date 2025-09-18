@@ -20,6 +20,9 @@ def layout():
 
         df = query_job_listings(tabel_name=table)
 
+    with cols[1]:
+        slider = st.slider("Välj antal filtrerade annonser", value=10, min_value=0, max_value=50, step=5)
+
     st.write("### KPI's")
     cols = st.columns(3)
 
@@ -35,25 +38,92 @@ def layout():
 
     cols = st.columns(2)
     with cols[0]:
-            st.markdown("### Per yrkes grupp  topp 5")
+            st.markdown(f"### top {slider} arbetsgivare med flest annonser")
 
-            top_job_bar = (
-                df.groupby("OCCUPATION_GROUP")["VACANCIES"]
+            top_employer_bar = (
+                df.groupby("EMPLOYER__NAME")["VACANCIES"]
                 .sum()
                 .sort_values(ascending=False)
-                .head(5)
+                .head(slider)
                 .reset_index()
             )
 
             plt.figure(figsize=(9, 4))
-            plt.barh(top_job_bar["OCCUPATION_GROUP"], top_job_bar["VACANCIES"], color="#77a4c4")
+            plt.barh(top_employer_bar["EMPLOYER__NAME"], top_employer_bar["VACANCIES"], color="#b856b2")
             plt.gca().invert_yaxis()
             plt.xlabel("Antal annonser", color="white", size=14)
-            plt.ylabel("Occupation Group", color="white", size=14)
+            plt.ylabel("Arbetsgivare", color="white", size=14)
             plt.xticks(color="white")
             plt.yticks(color="white")
 
             st.pyplot(plt,transparent=True)
+    
+    with cols[1]:
+        st.markdown(f"### Top {slider} yrkesgrupper med flest annonser")
+
+        top_job_bar = (
+                df.groupby("OCCUPATION_GROUP")["VACANCIES"]
+                .sum()
+                .sort_values(ascending=False)
+                .head(slider)
+                .reset_index()
+            )
+
+        plt.figure(figsize=(9, 4))
+        plt.barh(top_job_bar["OCCUPATION_GROUP"], top_job_bar["VACANCIES"], color="#779bc4")
+        plt.gca().invert_yaxis()
+        plt.xlabel("Antal annonser", color="white", size=14)
+        plt.ylabel("Yrkesgrupper", color="white", size=14)
+        plt.xticks(color="white")
+        plt.yticks(color="white")
+
+        st.pyplot(plt,transparent=True)
+
+    cols = st.columns(2)
+    with cols[0]:
+        st.markdown(f"### Top {slider} städer med flest annonser")
+        county_bar = (
+            df.groupby("WORKPLACE_ADDRESS__MUNICIPALITY")["VACANCIES"]
+            .sum()
+            .sort_values(ascending=False)
+            .head(slider)
+            .reset_index()
+        )
+
+        plt.figure(figsize=(9, 4))
+        plt.barh(county_bar["WORKPLACE_ADDRESS__MUNICIPALITY"], county_bar["VACANCIES"], color="#78c477")
+        plt.gca().invert_yaxis()
+        plt.xlabel("Antal annonser", color="white", size=14)
+        plt.ylabel("Län", color="white", size=14)
+        plt.xticks(color="white")
+        plt.yticks(color="white")
+
+        st.pyplot(plt,transparent=True)
+
+    with cols[1]:
+        st.markdown(f"### Top {slider} yrkesgrupper med krav på körkort")
+        
+        df_license = df[df["DRIVING_LICENSE_REQUIRED"] == True]
+
+        driving_bar = (
+            df_license.groupby("OCCUPATION_GROUP")["VACANCIES"]
+            .sum()
+            .sort_values(ascending=False)
+            .head(slider)
+            .reset_index()
+        )
+
+
+        plt.figure(figsize=(9, 4))
+        plt.barh(driving_bar["OCCUPATION_GROUP"], driving_bar["VACANCIES"], color="#c75656")
+        plt.gca().invert_yaxis()
+        plt.xlabel("Antal annonser med krav på körkort", color="white", size=14)
+        plt.ylabel("Yrkesgrupp", color="white", size=14)
+        plt.xticks(color="white")
+        plt.yticks(color="white")
+
+        st.pyplot(plt,transparent=True)
+
 
     st.write("### Hitta job")
     cols = st.columns(2)
@@ -61,8 +131,13 @@ def layout():
         municipality = st.selectbox("Välj stad", options=sorted(df["WORKPLACE_ADDRESS__MUNICIPALITY"].dropna().unique()))
     
     with cols[1]:
-        employer_name = st.selectbox("Välj arbetsgivare", sorted(df.query("WORKPLACE_ADDRESS__MUNICIPALITY == @municipality")["EMPLOYER__NAME"].dropna().unique()))
-        df_filtered = df.query("WORKPLACE_ADDRESS__MUNICIPALITY == @municipality and EMPLOYER__NAME == @employer_name")
+        employer_options = ["Alla"] + sorted(df.query("WORKPLACE_ADDRESS__MUNICIPALITY == @municipality")["EMPLOYER__NAME"].dropna().unique().tolist())
+        employer_name = st.selectbox("Välj arbetsgivare", employer_options)
+
+
+        df_filtered = df.query("WORKPLACE_ADDRESS__MUNICIPALITY == @municipality")
+        if employer_name != "Alla":
+            df_filtered = df_filtered.query("EMPLOYER__NAME == @employer_name")
 
     cols = st.columns(2)
     with cols[0]:
