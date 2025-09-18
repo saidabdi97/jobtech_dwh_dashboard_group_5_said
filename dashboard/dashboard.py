@@ -49,7 +49,7 @@ def layout():
             )
 
             plt.figure(figsize=(9, 4))
-            plt.barh(top_employer_bar["EMPLOYER__NAME"], top_employer_bar["VACANCIES"], color="#b856b2")
+            plt.barh(top_employer_bar["EMPLOYER__NAME"], top_employer_bar["VACANCIES"], color="#b660b0")
             plt.gca().invert_yaxis()
             plt.xlabel("Antal annonser", color="white", size=14)
             plt.ylabel("Arbetsgivare", color="white", size=14)
