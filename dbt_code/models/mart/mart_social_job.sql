@@ -2,7 +2,8 @@ with
     fct_job_ads as (select * from {{ ref('fct_job_ads') }}),
     dim_occupation as (select * from {{ ref('dim_occupation') }}),
     dim_job_details as (select * from {{ ref('dim_job_details') }}),
-    dim_employer as (select * from {{ ref('dim_employer') }})
+    dim_employer as (select * from {{ ref('dim_employer') }}),
+    dim_auxilliary_attributes as (select * from {{ ref('dim_auxilliary_attributes') }})
 select
     f.vacancies,
     f.relevance,
