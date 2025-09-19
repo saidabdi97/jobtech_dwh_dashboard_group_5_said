@@ -85,14 +85,14 @@ SNOWFLAKE_SCHEMA=your_schema
 ### Data Ingestion
 Run the dlt pipeline to extract data from Jobtech API:
 ```bash
-python scripts/load_job_ads.py
+python code/job_pipeline.py
 ```
 
 ### Data Transformation
 Execute dbt transformations:
 ```bash
+cd dbt_code
 dbt run
-dbt test 
 ```
 
 ### Dashboard
