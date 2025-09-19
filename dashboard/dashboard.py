@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 
 def layout():
     st.set_page_config(layout="wide")
-    st.title("Data engineering job ads")
-    st.write("This data shows data engineering job ads from arbetsförmedlingens API")
+    st.title("HR Dashboard")
+    st.write("Detta projekt implementerar en modern datastack för att lösa analysutmaningar för en rekryteringsbyrå. Vår lösning automatiserar utvinning, omvandling och analys av arbetsmarknadsdata från Arbetsförmedlingen för att hjälpa rekryteringsspecialister att fatta datadrivna beslut.")
     cols = st.columns(2)
     with cols[0]:
         tabel_options = {
