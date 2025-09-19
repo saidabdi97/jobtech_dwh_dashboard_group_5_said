@@ -123,12 +123,13 @@ Data_warehouse_project_group_5/
 ├── README.md
 ├── requirements.txt
 ├── .gitignore
-├── .env.example
-├── scripts/
-│   ├── load_job_ads.py
-│   └── utils/
-├── dbt_project/
+├── .env
+├── code/
+│   ├── job_pipeline.py
+│   └── .dlt/
+├── dbt_code/
 │   ├── dbt_project.yml
+|   |–– packages.yml
 │   ├── models/
 │   │   ├── staging/
 │   │   ├── warehouse/
@@ -136,11 +137,15 @@ Data_warehouse_project_group_5/
 │   ├── tests/
 │   └── macros/
 ├── dashboard/
-│   ├── app.py
-│   ├── pages/
-│   └── utils/
-└── docs/
-    └── project_documentation.md
+│   ├── run_dashboard.py
+│   ├── dashboard.py
+│   └── connect_data_warehouse.py
+|
+|–– worksheet_snowflake
+    |
+    |–– grant_users-sql
+    |–– setup_database.sql
+    |–– setup_marts_layer.sql
 ```
 
 
