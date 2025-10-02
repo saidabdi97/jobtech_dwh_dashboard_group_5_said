@@ -1,161 +1,166 @@
+# dashboard.py
 import streamlit as st
+import plotly.express as px
+import pandas as pd
 from connect_data_warehouse import query_job_listings
-import matplotlib.pyplot as plt
 
+st.set_page_config(layout="wide", page_title="HR Dashboard")
 
-def layout():
-    st.set_page_config(layout="wide")
-    st.title("HR Dashboard")
-    st.write("Detta projekt implementerar en modern datastack för att lösa analysutmaningar för en rekryteringsbyrå. Vår lösning automatiserar utvinning, omvandling och analys av arbetsmarknadsdata från Arbetsförmedlingen för att hjälpa rekryteringsspecialister att fatta datadrivna beslut.")
-    cols = st.columns(2)
-    with cols[0]:
-        tabel_options = {
-            "Yrken med social inriktning": "marts.mart_social_job",
-            "Yrken med teknisk inriktning": "marts.mart_technical_jobs",
-            "Chefer och verksamhetsledare": "marts.mart_managers_job"
-        }
-        table = st.selectbox("Välj tabell", options=list(tabel_options.keys()))
-        
-        table = tabel_options[table]
+# ---------- DATA ----------
+TABLE_MAP = {
+    "Yrken med social inriktning": "marts.mart_social_job",
+    "Yrken med teknisk inriktning": "marts.mart_technical_jobs",
+    "Chefer och verksamhetsledare": "marts.mart_managers_job",
+}
 
-        df = query_job_listings(tabel_name=table)
+@st.cache_data(ttl=300)
+def get_df(table_name: str) -> pd.DataFrame:
+    df = query_job_listings(tabel_name=table_name)
+    # Säkerställ kolumner & typer som används i UI
+    needed = [
+        "VACANCIES",
+        "EMPLOYER__NAME",
+        "OCCUPATION_GROUP",
+        "WORKPLACE_ADDRESS__MUNICIPALITY",
+        "DRIVING_LICENSE_REQUIRED",
+    ]
+    for c in needed:
+        if c not in df.columns:
+            df[c] = pd.NA
+    df["VACANCIES"] = pd.to_numeric(df["VACANCIES"], errors="coerce").fillna(0).astype(int)
+    return df
 
-    with cols[1]:
-        slider = st.slider("Välj antal filtrerade annonser", value=10, min_value=0, max_value=50, step=5)
+# ---------- LAYOUT ----------
+st.title("HR Dashboard")
+st.caption("Automatiserad analys av arbetsmarknadsdata för smartare och snabbare rekrytering.")
 
-    st.write("### KPI's")
-    cols = st.columns(3)
+# SIDOPANEL (alla filter här)
+with st.sidebar:
+    st.header("Filter")
+    table_key = st.selectbox("Tabell", list(TABLE_MAP.keys()))
+    top_n = st.slider("Top N", min_value=5, max_value=50, value=10, step=5)
+    st.divider()
+    st.caption("Tips: Exportera data längst ned i sidan.")
 
-    with cols[0]:
-        st.metric("Antal annonser", value=df["VACANCIES"].sum(), border=True)
+df = get_df(TABLE_MAP[table_key])
 
-    with cols[1]:
-        st.metric(label="Totalt i Stockholm", value = df.query("WORKPLACE_ADDRESS__MUNICIPALITY == 'Stockholm'")["VACANCIES"].sum(), border=True)
+# ---------- KPI-KORT ----------
+k1, k2, k3 = st.columns(3)
+tot = int(df["VACANCIES"].sum())
+stockholm = int(df.query("WORKPLACE_ADDRESS__MUNICIPALITY == 'Stockholm'")["VACANCIES"].sum())
+top_emp_ser = (
+    df.groupby("EMPLOYER__NAME")["VACANCIES"]
+    .sum()
+    .sort_values(ascending=False)
+    .head(1)
+)
 
-    with cols[2]:
-        top_employer = df.groupby("EMPLOYER__NAME")["VACANCIES"].sum().sort_values(ascending=False).head(1)
-        st.metric(label="Top 1 Arbetsgivare", value=top_employer.index[0], border=True)
+k1.metric("Antal annonser", f"{tot:,}".replace(",", " "))
+k2.metric("Totalt i Stockholm", f"{stockholm:,}".replace(",", " "))
+k3.metric("Top 1 arbetsgivare", top_emp_ser.index[0] if not top_emp_ser.empty else "—")
 
-    cols = st.columns(2)
-    with cols[0]:
-            st.markdown(f"### top {slider} arbetsgivare med flest annonser")
+st.divider()
 
-            top_employer_bar = (
-                df.groupby("EMPLOYER__NAME")["VACANCIES"]
-                .sum()
-                .sort_values(ascending=False)
-                .head(slider)
-                .reset_index()
-            )
+# ---------- HJÄLPFUNKTION DIAGRAM ----------
+def barh_plot(data: pd.DataFrame, x: str, y: str, title: str):
+    fig = px.bar(data, x=x, y=y, orientation="h")
+    fig.update_layout(
+        height=430, title=title,
+        margin=dict(l=10, r=10, t=50, b=10),
+        xaxis_title="Antal annonser", yaxis_title=None,
+    )
+    fig.update_yaxes(autorange="reversed")  # störst överst
+    st.plotly_chart(fig, use_container_width=True)
 
-            plt.figure(figsize=(9, 4))
-            plt.barh(top_employer_bar["EMPLOYER__NAME"], top_employer_bar["VACANCIES"], color="#b660b0")
-            plt.gca().invert_yaxis()
-            plt.xlabel("Antal annonser", color="white", size=14)
-            plt.ylabel("Arbetsgivare", color="white", size=14)
-            plt.xticks(color="white")
-            plt.yticks(color="white")
+# ---------- TABS MED DIAGRAM ----------
+tab1, tab2, tab3, tab4 = st.tabs(["Arbetsgivare", "Yrkesgrupper", "Kommuner", "Körkort"])
 
-            st.pyplot(plt,transparent=True)
-    
-    with cols[1]:
-        st.markdown(f"### Top {slider} yrkesgrupper med flest annonser")
+with tab1:
+    top_emp = (
+        df.groupby("EMPLOYER__NAME")["VACANCIES"]
+        .sum()
+        .sort_values(ascending=False)
+        .head(top_n)
+        .reset_index()
+    )
+    barh_plot(top_emp, "VACANCIES", "EMPLOYER__NAME", f"Top {top_n} arbetsgivare")
 
-        top_job_bar = (
-                df.groupby("OCCUPATION_GROUP")["VACANCIES"]
-                .sum()
-                .sort_values(ascending=False)
-                .head(slider)
-                .reset_index()
-            )
+with tab2:
+    top_occ = (
+        df.groupby("OCCUPATION_GROUP")["VACANCIES"]
+        .sum()
+        .sort_values(ascending=False)
+        .head(top_n)
+        .reset_index()
+    )
+    barh_plot(top_occ, "VACANCIES", "OCCUPATION_GROUP", f"Top {top_n} yrkesgrupper")
 
-        plt.figure(figsize=(9, 4))
-        plt.barh(top_job_bar["OCCUPATION_GROUP"], top_job_bar["VACANCIES"], color="#779bc4")
-        plt.gca().invert_yaxis()
-        plt.xlabel("Antal annonser", color="white", size=14)
-        plt.ylabel("Yrkesgrupper", color="white", size=14)
-        plt.xticks(color="white")
-        plt.yticks(color="white")
+with tab3:
+    top_city = (
+        df.groupby("WORKPLACE_ADDRESS__MUNICIPALITY")["VACANCIES"]
+        .sum()
+        .sort_values(ascending=False)
+        .head(top_n)
+        .reset_index()
+    )
+    barh_plot(top_city, "VACANCIES", "WORKPLACE_ADDRESS__MUNICIPALITY", f"Top {top_n} kommuner")
 
-        st.pyplot(plt,transparent=True)
+with tab4:
+    lic = df[df["DRIVING_LICENSE_REQUIRED"] == True]
+    top_lic = (
+        lic.groupby("OCCUPATION_GROUP")["VACANCIES"]
+        .sum()
+        .sort_values(ascending=False)
+        .head(top_n)
+        .reset_index()
+    )
+    barh_plot(top_lic, "VACANCIES", "OCCUPATION_GROUP", f"Top {top_n} med krav på körkort")
 
-    cols = st.columns(2)
-    with cols[0]:
-        st.markdown(f"### Top {slider} städer med flest annonser")
-        county_bar = (
-            df.groupby("WORKPLACE_ADDRESS__MUNICIPALITY")["VACANCIES"]
-            .sum()
-            .sort_values(ascending=False)
-            .head(slider)
-            .reset_index()
-        )
+st.subheader("Hitta jobb")
+c1, c2 = st.columns(2)
 
-        plt.figure(figsize=(9, 4))
-        plt.barh(county_bar["WORKPLACE_ADDRESS__MUNICIPALITY"], county_bar["VACANCIES"], color="#78c477")
-        plt.gca().invert_yaxis()
-        plt.xlabel("Antal annonser", color="white", size=14)
-        plt.ylabel("Län", color="white", size=14)
-        plt.xticks(color="white")
-        plt.yticks(color="white")
+with c1:
+    kommun = st.selectbox(
+        "Kommun",
+        sorted(df["WORKPLACE_ADDRESS__MUNICIPALITY"].dropna().unique()),
+        index=0 if df["WORKPLACE_ADDRESS__MUNICIPALITY"].notna().any() else None,
+    )
 
-        st.pyplot(plt,transparent=True)
+with c2:
+    emp_opts = ["Alla"] + sorted(
+        df.query("WORKPLACE_ADDRESS__MUNICIPALITY == @kommun")["EMPLOYER__NAME"]
+        .dropna()
+        .unique()
+        .tolist()
+    )
+    emp = st.selectbox("Arbetsgivare", emp_opts)
 
-    with cols[1]:
-        st.markdown(f"### Top {slider} yrkesgrupper med krav på körkort")
-        
-        df_license = df[df["DRIVING_LICENSE_REQUIRED"] == True]
+df_filt = df.query("WORKPLACE_ADDRESS__MUNICIPALITY == @kommun")
+if emp != "Alla":
+    df_filt = df_filt.query("EMPLOYER__NAME == @emp")
 
-        driving_bar = (
-            df_license.groupby("OCCUPATION_GROUP")["VACANCIES"]
-            .sum()
-            .sort_values(ascending=False)
-            .head(slider)
-            .reset_index()
-        )
-
-
-        plt.figure(figsize=(9, 4))
-        plt.barh(driving_bar["OCCUPATION_GROUP"], driving_bar["VACANCIES"], color="#c75656")
-        plt.gca().invert_yaxis()
-        plt.xlabel("Antal annonser med krav på körkort", color="white", size=14)
-        plt.ylabel("Yrkesgrupp", color="white", size=14)
-        plt.xticks(color="white")
-        plt.yticks(color="white")
-
-        st.pyplot(plt,transparent=True)
-
-
-    st.write("### Hitta job")
-    cols = st.columns(2)
-    with cols[0]:
-        municipality = st.selectbox("Välj stad", options=sorted(df["WORKPLACE_ADDRESS__MUNICIPALITY"].dropna().unique()))
-    
-    with cols[1]:
-        employer_options = ["Alla"] + sorted(df.query("WORKPLACE_ADDRESS__MUNICIPALITY == @municipality")["EMPLOYER__NAME"].dropna().unique().tolist())
-        employer_name = st.selectbox("Välj arbetsgivare", employer_options)
-
-
-        df_filtered = df.query("WORKPLACE_ADDRESS__MUNICIPALITY == @municipality")
-        if employer_name != "Alla":
-            df_filtered = df_filtered.query("EMPLOYER__NAME == @employer_name")
-
-    cols = st.columns(2)
-    with cols[0]:
-        st.metric(label="Totalta job", value = df_filtered["VACANCIES"].sum(), border=True)
-    
-    with cols[1]:
-        top_jobs = (
-        df_filtered.groupby("OCCUPATION_GROUP")["VACANCIES"]
+m1, m2 = st.columns([1, 2])
+with m1:
+    st.metric("Totalt antal jobb", f"{int(df_filt['VACANCIES'].sum()):,}".replace(",", " "))
+with m2:
+    top5 = (
+        df_filt.groupby("OCCUPATION_GROUP")["VACANCIES"]
         .sum()
         .sort_values(ascending=False)
         .head(5)
         .reset_index()
     )
-        st.dataframe(top_jobs,hide_index=True)
+    st.dataframe(top5, hide_index=True, use_container_width=True)
 
-
-    with st.expander("Se all data"):
-        st.dataframe(df)
+with st.expander("Se all data / export"):
+    st.dataframe(df, hide_index=True, use_container_width=True)
+    st.download_button(
+        "Ladda ned CSV",
+        df.to_csv(index=False).encode("utf-8"),
+        "annonser.csv",
+        "text/csv",
+    )
 
 if __name__ == "__main__":
-    layout()
+    # Tillåter körning som 'streamlit run dashboard.py'
+    pass

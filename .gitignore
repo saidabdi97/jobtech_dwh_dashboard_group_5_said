@@ -210,4 +210,4 @@ __marimo__/
 
 **/.dlt
 .dlt
-.env
+.envcode/.dlt/
